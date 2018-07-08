@@ -1,0 +1,9 @@
+./data/um1.wav um
+./data/um2.wav um
+./data/um3.wav um
+./data/dois1.wav dois
+./data/dois2.wav dois
+./data/dois3.wav dois
+./data/tres1.wav tres
+./data/tres2.wav tres
+./data/tres3.wav tres
