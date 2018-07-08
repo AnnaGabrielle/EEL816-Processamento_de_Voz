@@ -1,0 +1,6 @@
+Audacity recording settings
+->16KHz;
+->Mono (1 canal); 
+->bit rate 128kbps;
+->header: WAV (Microsoft)
+->Encoding: U-Law
