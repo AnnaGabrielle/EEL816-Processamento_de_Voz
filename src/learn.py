@@ -1,4 +1,3 @@
-import seaborn as sb 
 import matplotlib.pyplot as plt 
 import librosa as lb
 import python_speech_features as psf
@@ -7,7 +6,13 @@ import scipy.signal as sgn
 import numpy as np
 import math
 import operator
-
+import pyaudio
+from array import array
+import sys
+import wave
+import os
+from casting import *
+import time as t
 
 class SoundObject:
     word = ''
@@ -49,8 +54,62 @@ class SoundObject:
     def features(self):
         return [self.mfcc, self.d_mfcc, self.d2_mfcc, self.logFilterBank]
 
+
+class Recoder:    
+    
+
+    def record(self):
+        FORMAT = pyaudio.paInt16
+        CHANNELS = 1
+        RATE = 16000
+        CHUNK = 128
+        RECORD_SECONDS = 1.5
+        WAVE_OUTPUT_FILENAME = "temp.wav"
+         
+        audio = pyaudio.PyAudio()
+        os.system('cls' if os.name == 'nt' else 'clear')
+        _ = input("Precione Enter para começar a gravação de ~ 1.5s")
+
+        # start Recording
+        stream = audio.open(format=FORMAT, channels=CHANNELS,
+                        rate=RATE, input=True,
+                        frames_per_buffer=CHUNK)
+        print("recording...")
+        frames = []
+         
+        for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+            data = stream.read(CHUNK)
+            frames.append(data)
+        print("finished recording")
+         
+        # stop Recording
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+         
+        waveFile = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+        waveFile.setnchannels(CHANNELS)
+        waveFile.setsampwidth(audio.get_sample_size(FORMAT))
+        waveFile.setframerate(RATE)
+        waveFile.writeframes(b''.join(frames))
+        waveFile.close()
+
 def maxValue(dic):
     return  max(dic.items(), key=operator.itemgetter(1))[0]
+
+def voteResult(dic):
+    res = {}
+    result = [None,0]
+    for word, votes in dic.items():
+
+        if(votes[0] in res):
+            res[votes[0]]+=1
+        else:
+            res[votes[0]]=1
+    for word, votes in res.items():
+        if(votes>=result[1]):
+            result = [word,votes]
+    return result
 
 def compare(base, audio):
     best = {
@@ -60,7 +119,7 @@ def compare(base, audio):
         'logFilterBank': [None,math.inf]
     }
 
-    words = ['zero', 'um', 'dois', 'tres', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'mais', 'menos', 'dividido', 'vezes']
+    words = ['zero', 'um', 'dois', 'tres', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'mais', 'menos', 'dividido', 'vezes','igual']
     features = ['mfcc', 'd_mfcc', 'd2_mfcc', 'logFilterBank']
     for word in words:
         for idx, feature in enumerate(features):
@@ -68,7 +127,35 @@ def compare(base, audio):
                 dist, path = lb.core.dtw(data, audio.features()[idx])
                 if(dist[-1][-1]<best[feature][1]):
                     best[feature] = [word,dist[-1][-1]]
-    return best
+    return voteResult(best)
+
+def mainFunction(audiosFeatures):
+    
+    rec = Recoder()
+    play = True
+    equation = []#por extenso.
+    while(play):
+        
+        rec.record()
+        
+        audio = SoundObject('temp.wav')
+        word = compare(audiosFeatures, audio)
+        os.remove('temp.wav')
+
+        print("Palavra reconhecida", word)
+        t.sleep(1)
+
+        if(word[0] != "igual"):
+            equation.append(word[0])#passar como lista direto
+        else:
+            play = False
+
+    print("Equação", equation)
+    c = TextCalculator()
+    (op,x,y) = c.data_extract(equation)#passar como lista direto
+    print(c.calculator(op,x,y))
+
+
 
 if __name__ == "__main__":
     audios = {
@@ -85,7 +172,8 @@ if __name__ == "__main__":
         'mais':[],
         'menos':[],
         'dividido':[],
-        'vezes':[]
+        'vezes':[],
+        'igual':[]
     }
 
     audiosFeatures = {
@@ -172,11 +260,17 @@ if __name__ == "__main__":
             'd_mfcc':[],
             'd2_mfcc':[],
             'logFilterBank':[]            
+        },
+        'igual':{
+            'mfcc':[],
+            'd_mfcc':[],
+            'd2_mfcc':[],
+            'logFilterBank':[]            
         }
     }
 
     #inputFile = input("Dataset: ")
-    inputFile = 'input.txt'
+    inputFile = 'train.txt'
     with open(inputFile) as file:
         for line in file:
             soundPath, word = line.split()
@@ -187,9 +281,9 @@ if __name__ == "__main__":
             audiosFeatures[word]['d2_mfcc'].append(np.array(audio.d2_mfcc))
             audiosFeatures[word]['logFilterBank'].append(np.array(audio.logFilterBank))
     
-    audioP = './data/dois4.wav'
-    testSound = SoundObject(audioP)
-
-    match = compare(audiosFeatures, testSound)
-    print(audioP)
-    print(match)
+    #a = SoundObject('./data/test/cinco/cinco18.wav')
+    #r = Recoder()
+    #r.record()
+    #a = SoundObject('./data/test/igual/igual20.wav')
+    #print(compare(audiosFeatures,a)[0])
+    mainFunction(audiosFeatures)
