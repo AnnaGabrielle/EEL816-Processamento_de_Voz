@@ -109,6 +109,8 @@ def voteResult(dic):
     for word, votes in res.items():
         if(votes>=result[1]):
             result = [word,votes]
+    if(result[1]==1):
+        return [None,None]
     return result
 
 def compare(base, audio):
@@ -141,7 +143,10 @@ def mainFunction(audiosFeatures):
         audio = SoundObject('temp.wav')
         word = compare(audiosFeatures, audio)
         os.remove('temp.wav')
-
+        if(word[0]==None):
+            print("Repita a palavra por favor")
+            t.sleep(1)
+            continue    
         print("Palavra reconhecida", word)
         t.sleep(1)
 
@@ -154,7 +159,6 @@ def mainFunction(audiosFeatures):
     c = TextCalculator()
     (op,x,y) = c.data_extract(equation)#passar como lista direto
     print(c.calculator(op,x,y))
-
 
 
 if __name__ == "__main__":
@@ -286,4 +290,4 @@ if __name__ == "__main__":
     #r.record()
     #a = SoundObject('./data/test/igual/igual20.wav')
     #print(compare(audiosFeatures,a)[0])
-    mainFunction(audiosFeatures)
+    #mainFunction(audiosFeatures)
